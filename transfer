@@ -1,17 +1,5 @@
-$mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Where-Object {
-    $folderItems = Get-ChildItem -Path $_.FullName -File
-    ($folderItems.Count -gt 0) -and ($folderItems -match $filePattern)
-} | Select-Object -First 1
-
-
-$mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Where-Object {
-    $folderItems = Get-ChildItem -Path $_.FullName -File
-    $folderItems -match $filePatterns
-} | Select-Object -First 1
-
-
-# Copy files from the most recent non-empty folder to the destination directory
-Get-ChildItem -Path $mostRecentNonEmptyFolder.FullName -File | Where-Object {
+# Copy files that match the specified patterns from the source folder to the destination folder
+Get-ChildItem -Path $sourceFolder -File | Where-Object {
     foreach ($pattern in $filePatterns) {
         if ($_.Name -like $pattern) {
             return $true
@@ -19,7 +7,7 @@ Get-ChildItem -Path $mostRecentNonEmptyFolder.FullName -File | Where-Object {
     }
     return $false
 } | ForEach-Object {
-    $destinationFilePath = Join-Path -Path $destinationDirectory -ChildPath $_.Name
+    $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $_.Name
     Copy-Item -Path $_.FullName -Destination $destinationFilePath
     Write-Host "Copied file to: $destinationFilePath"
 }
