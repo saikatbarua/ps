@@ -8,3 +8,18 @@ $mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Whe
     $folderItems = Get-ChildItem -Path $_.FullName -File
     $folderItems -match $filePatterns
 } | Select-Object -First 1
+
+
+# Copy files from the most recent non-empty folder to the destination directory
+Get-ChildItem -Path $mostRecentNonEmptyFolder.FullName -File | Where-Object {
+    foreach ($pattern in $filePatterns) {
+        if ($_.Name -like $pattern) {
+            return $true
+        }
+    }
+    return $false
+} | ForEach-Object {
+    $destinationFilePath = Join-Path -Path $destinationDirectory -ChildPath $_.Name
+    Copy-Item -Path $_.FullName -Destination $destinationFilePath
+    Write-Host "Copied file to: $destinationFilePath"
+}
