@@ -7,3 +7,18 @@ $filteredItems = $directories | Where-Object {
 }
 
 ^\d{4}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$
+
+^\d{4}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$
+
+# Get all subdirectories in the parent directory that match the YYYYMMDD format
+$subDirectories = Get-ChildItem -Path $parentDirectory -Directory | Where-Object { $_.Name -match $regexPattern }
+
+# Sort the directories by name in descending order and find the most recent non-empty directory
+$mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Where-Object { (Get-ChildItem -Path $_.FullName).Count -gt 0 } | Select-Object -First 1
+
+# Check if a non-empty directory was found
+if ($null -eq $mostRecentNonEmptyFolder) {
+    Write-Host "No non-empty directories found in the YYYYMMDD format."
+} else {
+    Write-Host "The most recent non-empty folder is: $($mostRecentNonEmptyFolder.FullName)"
+}
