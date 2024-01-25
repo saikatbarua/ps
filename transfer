@@ -5,3 +5,5 @@
 $filteredItems = $directories | Where-Object {
     ($_.Name -match $regexPattern) -and (Get-ChildItem -Path $_.FullName | Measure-Object).Count -gt 0
 }
+
+^\d{4}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$
