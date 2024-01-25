@@ -2,3 +2,9 @@ $mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Whe
     $folderItems = Get-ChildItem -Path $_.FullName -File
     ($folderItems.Count -gt 0) -and ($folderItems -match $filePattern)
 } | Select-Object -First 1
+
+
+$mostRecentNonEmptyFolder = $subDirectories | Sort-Object Name -Descending | Where-Object {
+    $folderItems = Get-ChildItem -Path $_.FullName -File
+    $folderItems -match $filePatterns
+} | Select-Object -First 1
