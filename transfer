@@ -1,1 +1,7 @@
 ^\d{4}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])$
+
+
+# Filter directories based on the regex pattern and check if they are not empty
+$filteredItems = $directories | Where-Object {
+    ($_.Name -match $regexPattern) -and (Get-ChildItem -Path $_.FullName | Measure-Object).Count -gt 0
+}
