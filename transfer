@@ -1,0 +1,53 @@
+# PowerShell Script to Find the Newest Source Folder and Copy Its Files to a Destination Folder
+
+# Specify the path of the parent directory containing potential source folders
+$parentDirectory = "C:\path\to\parent\directory"
+
+# Specify the destination folder
+$destinationFolder = "C:\path\to\destination\folder"
+
+# Find the most recently created subfolder in the parent directory
+$latestSourceFolder = Get-ChildItem -Path $parentDirectory -Directory | Sort-Object CreationTime -Descending | Select-Object -First 1
+
+# Check if there is at least one subfolder in the parent directory
+if ($null -eq $latestSourceFolder) {
+    Write-Host "No subfolders found in the parent directory: $parentDirectory"
+    return
+}
+
+$sourceFolder = $latestSourceFolder.FullName
+Write-Host "Newest source folder based on creation timestamp: $sourceFolder"
+
+# Check if the destination folder exists
+if (-not (Test-Path -Path $destinationFolder)) {
+    # Create the destination folder if it does not exist
+    New-Item -Path $destinationFolder -ItemType Directory
+    Write-Host "Destination folder created: $destinationFolder"
+}
+
+# Get all files in the source folder
+$sourceFiles = Get-ChildItem -Path $sourceFolder -File
+
+foreach ($file in $sourceFiles) {
+    $sourceFilePath = $file.FullName
+    $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $file.Name
+
+    # Determine if the file in the destination folder needs to be updated
+    $copyFile = $true
+    if (Test-Path -Path $destinationFilePath) {
+        $sourceLastWriteTime = $file.LastWriteTime
+        $destinationLastWriteTime = (Get-Item -Path $destinationFilePath).LastWriteTime
+
+        if ($sourceLastWriteTime -le $destinationLastWriteTime) {
+            $copyFile = $false
+        }
+    }
+
+    # Copy the file if it is newer or does not exist in the destination folder
+    if ($copyFile) {
+        Copy-Item -Path $sourceFilePath -Destination $destinationFolder
+        Write-Host "File copied: $sourceFilePath"
+    } else {
+        Write-Host "Latest version already in destination: $sourceFilePath"
+    }
+}
