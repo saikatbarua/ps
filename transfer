@@ -1,26 +1,5 @@
-# Specify the timeout in seconds (e.g., 300 seconds = 5 minutes)
-$timeout = 300
-
-# Specify the interval in seconds to check for the file (e.g., every 10 seconds)
-$interval = 10
-
-# Start the timer
-$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-
-# Wait for the file to be copied
-while (-not (Test-Path -Path $filePath)) {
-    if ($stopwatch.Elapsed.TotalSeconds -gt $timeout) {
-        Write-Host "Timeout reached. File not found: $filePath"
-        break
-    }
-
-    # Wait for the specified interval before checking again
+# Wait until the folder contains at least one file
+while ((Get-ChildItem -Path $folderPath -File).Count -eq 0) {
+    Write-Host "Waiting for a file in $folderPath..."
     Start-Sleep -Seconds $interval
 }
-
-if (Test-Path -Path $filePath) {
-    Write-Host "File copied successfully: $filePath"
-}
-
-# Stop the timer
-$stopwatch.Stop()
