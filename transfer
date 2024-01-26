@@ -11,3 +11,26 @@ Get-ChildItem -Path $sourceFolder -File | Where-Object {
     Copy-Item -Path $_.FullName -Destination $destinationFilePath
     Write-Host "Copied file to: $destinationFilePath"
 }
+
+
+// Construct the command
+            String command = "powershell.exe -ExecutionPolicy Bypass -File CopyFiles.ps1 -sourceFolder \"" +
+                             sourceFolder + "\" -destinationFolder \"" +
+                             destinationFolder + "\" -filePatterns " +
+                             String.join(" ", filePatterns);
+
+            // Start the process
+            Process powerShellProcess = Runtime.getRuntime().exec(command);
+
+            // Read the output from the script
+            BufferedReader stdout = new BufferedReader(new InputStreamReader(
+                    powerShellProcess.getInputStream()));
+            String line;
+            while ((line = stdout.readLine()) != null) {
+                System.out.println(line);
+            }
+            stdout.close();
+
+            // Wait for the script to finish and check the exit code
+            int exitCode = powerShellProcess.waitFor();
+            System.out.println("Exit code: " + exitCode);
