@@ -8,3 +8,11 @@ $matchingSubdirectories = $subDirectories | Where-Object {
 
 # Sort the matching directories by name in descending order and select the most recent one
 $mostRecentDirectory = $matchingSubdirectories | Sort-Object Name -Descending | Select-Object -First 1
+
+
+
+ProcessBuilder builder = new ProcessBuilder(
+                    "powershell.exe",
+                    "-ExecutionPolicy", "Bypass",
+                    "-File", "C:\\path\\to\\script.ps1"
+            );
