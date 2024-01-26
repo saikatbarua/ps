@@ -1,41 +1,10 @@
-# Copy files that match the specified patterns from the source folder to the destination folder
-Get-ChildItem -Path $sourceFolder -File | Where-Object {
-    foreach ($pattern in $filePatterns) {
-        if ($_.Name -like $pattern) {
-            return $true
-        }
-    }
-    return $false
-} | ForEach-Object {
-    $destinationFilePath = Join-Path -Path $destinationFolder -ChildPath $_.Name
-    Copy-Item -Path $_.FullName -Destination $destinationFilePath
-    Write-Host "Copied file to: $destinationFilePath"
-}
+# Get all subdirectories in the parent directory that match the YYYYMMDD format
+$subDirectories = Get-ChildItem -Path $parentDirectory -Directory | Where-Object { $_.Name -match $regexPattern }
 
-
-// Construct the command
-            String command = "powershell.exe -ExecutionPolicy Bypass -File CopyFiles.ps1 -sourceFolder \"" +
-                             sourceFolder + "\" -destinationFolder \"" +
-                             destinationFolder + "\" -filePatterns " +
-                             String.join(" ", filePatterns);
-
-            // Start the process
-            Process powerShellProcess = Runtime.getRuntime().exec(command);
-
-            // Read the output from the script
-            BufferedReader stdout = new BufferedReader(new InputStreamReader(
-                    powerShellProcess.getInputStream()));
-            String line;
-            while ((line = stdout.readLine()) != null) {
-                System.out.println(line);
-            }
-            stdout.close();
-
-            // Wait for the script to finish and check the exit code
-            int exitCode = powerShellProcess.waitFor();
-            System.out.println("Exit code: " + exitCode);
-
-# Find subdirectories that contain at least one file with the specified file extension
+# Find subdirectories that contain at least one file with the specified substring in the filename
 $matchingSubdirectories = $subDirectories | Where-Object {
-    (Get-ChildItem -Path $_.FullName -Filter $fileExtension).Count -gt 0
+    (Get-ChildItem -Path $_.FullName -File | Where-Object { $_.Name -like "*$fileSubstring*" }).Count -gt 0
 }
+
+# Sort the matching directories by name in descending order and select the most recent one
+$mostRecentDirectory = $matchingSubdirectories | Sort-Object Name -Descending | Select-Object -First 1
