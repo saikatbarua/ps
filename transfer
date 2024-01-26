@@ -1,18 +1,26 @@
-# Get all subdirectories in the parent directory that match the YYYYMMDD format
-$subDirectories = Get-ChildItem -Path $parentDirectory -Directory | Where-Object { $_.Name -match $regexPattern }
+# Specify the timeout in seconds (e.g., 300 seconds = 5 minutes)
+$timeout = 300
 
-# Find subdirectories that contain at least one file with the specified substring in the filename
-$matchingSubdirectories = $subDirectories | Where-Object {
-    (Get-ChildItem -Path $_.FullName -File | Where-Object { $_.Name -like "*$fileSubstring*" }).Count -gt 0
+# Specify the interval in seconds to check for the file (e.g., every 10 seconds)
+$interval = 10
+
+# Start the timer
+$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+
+# Wait for the file to be copied
+while (-not (Test-Path -Path $filePath)) {
+    if ($stopwatch.Elapsed.TotalSeconds -gt $timeout) {
+        Write-Host "Timeout reached. File not found: $filePath"
+        break
+    }
+
+    # Wait for the specified interval before checking again
+    Start-Sleep -Seconds $interval
 }
 
-# Sort the matching directories by name in descending order and select the most recent one
-$mostRecentDirectory = $matchingSubdirectories | Sort-Object Name -Descending | Select-Object -First 1
+if (Test-Path -Path $filePath) {
+    Write-Host "File copied successfully: $filePath"
+}
 
-
-
-ProcessBuilder builder = new ProcessBuilder(
-                    "powershell.exe",
-                    "-ExecutionPolicy", "Bypass",
-                    "-File", "C:\\path\\to\\script.ps1"
-            );
+# Stop the timer
+$stopwatch.Stop()
