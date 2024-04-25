@@ -3,3 +3,14 @@ while ((Get-ChildItem -Path $folderPath -File).Count -eq 0) {
     Write-Host "Waiting for a file in $folderPath..."
     Start-Sleep -Seconds $interval
 }
+
+new WebDriverWait(driver, 10).until((ExpectedCondition<Boolean>) d -> {
+            Set<String> handles = driver.getWindowHandles();
+            for (String handle : handles) {
+                driver.switchTo().window(handle);
+                if (driver.getTitle().equals(title)) {
+                    return true;
+                }
+            }
+            return false;
+        });
