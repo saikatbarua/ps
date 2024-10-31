@@ -1,59 +1,12 @@
-import requests
-import websocket
-import json
-import time
-
-# Fetch the active DevTools protocol endpoint (get the WebSocket URL)
-def get_websocket_url():
-    response = requests.get('http://localhost:9222/json')
-    chrome_data = response.json()
-    
-    # Extract the websocket URL
-    if chrome_data and 'webSocketDebuggerUrl' in chrome_data[0]:
-        return chrome_data[0]['webSocketDebuggerUrl']
-    else:
-        raise Exception("No WebSocket URL found")
-
-# Step 3: Use DevTools Protocol to automate Chrome actions
-def send_devtools_command(ws, method, params=None):
-    """
-    Sends a command to Chrome DevTools Protocol via WebSocket.
-    
-    :param ws: WebSocket connection object.
-    :param method: DevTools Protocol method (e.g., 'Page.navigate').
-    :param params: Parameters for the method as a dictionary.
-    """
-    message = json.dumps({
-        'id': 1,   # Unique ID for this message
-        'method': method,
-        'params': params if params else {}
-    })
-    ws.send(message)
-    response = ws.recv()
-    return json.loads(response)
-
-# Get WebSocket URL
-debugging_url = get_websocket_url()
-
-# Connect to Chrome's WebSocket Debugging Protocol
-ws = websocket.create_connection(debugging_url)
-
-# Step 4: Automate Chrome - Example: Navigate to a URL
-# Send a Page.navigate command
-response = send_devtools_command(ws, 'Page.navigate', {'url': 'https://www.example.com'})
-
-# Wait for the page to load
-time.sleep(2)
-
-# Example: Capture a screenshot
-response = send_devtools_command(ws, 'Page.captureScreenshot', {})
-screenshot_data = response['result']['data']
-
-# Save the screenshot
-with open("screenshot.png", "wb") as f:
-    f.write(screenshot_data.encode('ascii'))
-
-print("Screenshot saved!")
-
-# Close the WebSocket connection
-ws.close()
+{
+  "roles": [
+    {
+      "roleType": "admin",
+      "users": ["Alice", "Bob"]
+    },
+    {
+      "roleType": "editor",
+      "users": ["Charlie", "David"]
+    }
+  ]
+}
