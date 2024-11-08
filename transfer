@@ -12,8 +12,8 @@ parameters:
   - name: propertyOverride
     displayName: 'Property Override'
     type: string
-    default: 'property1=new_value'
-    help: 'Specify the property and new value to override in the format key=value.'
+    default: ''
+    help: 'Specify the property and new value to override in the format key=value. Leave empty to use the original value in the config file.'
 
 stages:
   - stage: Build
@@ -37,21 +37,25 @@ stages:
                 exit 1
               fi
 
-              # Extract key and value from the propertyOverride parameter
-              OVERRIDE_KEY="${{ parameters.propertyOverride%%=* }}"
-              OVERRIDE_VALUE="${{ parameters.propertyOverride#*= }}"
-              
-              # Use PowerShell to update the property in the file
-              powershell -Command "
-                (Get-Content -Path $CONFIG_FILE) -replace '^$OVERRIDE_KEY=.*', '$OVERRIDE_KEY=$OVERRIDE_VALUE' | Set-Content -Path $CONFIG_FILE
-              "
+              # Only proceed with override if propertyOverride is not empty
+              if [ -n "${{ parameters.propertyOverride }}" ]; then
+                # Extract key and value from the propertyOverride parameter
+                OVERRIDE_KEY="${{ parameters.propertyOverride%%=* }}"
+                OVERRIDE_VALUE="${{ parameters.propertyOverride#*= }}"
+                
+                # Use PowerShell to update the property in the file
+                powershell -Command "
+                  (Get-Content -Path $CONFIG_FILE) -replace '^$OVERRIDE_KEY=.*', '$OVERRIDE_KEY=$OVERRIDE_VALUE' | Set-Content -Path $CONFIG_FILE
+                "
+                echo "Property '$OVERRIDE_KEY' overridden with value '$OVERRIDE_VALUE' in $CONFIG_FILE"
+              else
+                echo "No property override provided. Using values from $CONFIG_FILE."
+              fi
+            displayName: 'Override Property in Configuration File (if override is provided)'
 
-              echo "Property '$OVERRIDE_KEY' overridden with value '$OVERRIDE_VALUE' in $CONFIG_FILE"
-            displayName: 'Override Property in Configuration File'
-
-          # Example usage of updated properties
+          # Load the properties from the (potentially modified) config file for further use
           - script: |
-              # Load updated properties as environment variables for further use
+              # Load properties as environment variables
               for line in $(cat "$CONFIG_FILE"); do
                 if [[ "$line" == *"="* && "$line" != "#"* ]]; then
                   key=${line%%=*}
@@ -60,5 +64,5 @@ stages:
                   echo "##vso[task.setvariable variable=$key]$value"
                 fi
               done
-              echo "Updated configuration loaded."
-            displayName: 'Load Updated Configuration Properties'
+              echo "Configuration loaded from $CONFIG_FILE."
+            displayName: 'Load Configuration Properties'
