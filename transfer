@@ -1,12 +1,64 @@
-{
-  "roles": [
-    {
-      "roleType": "admin",
-      "users": ["Alice", "Bob"]
-    },
-    {
-      "roleType": "editor",
-      "users": ["Charlie", "David"]
-    }
-  ]
-}
+# azure-pipelines.yml
+trigger:
+  - main
+
+parameters:
+  - name: configFileName
+    displayName: 'Configuration File Name'
+    type: string
+    default: 'config.properties'
+    help: 'Specify the filename of the configuration file in the test directory.'
+
+  - name: propertyOverride
+    displayName: 'Property Override'
+    type: string
+    default: 'property1=new_value'
+    help: 'Specify the property and new value to override in the format key=value.'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: LoadAndOverrideConfig
+        displayName: 'Load and Override Configurations'
+        pool:
+          vmImage: 'windows-latest'
+        
+        steps:
+          - script: |
+              # Define the base directory
+              BASE_DIR="C:\\Users\\UserName\\Desktop\\test"
+              
+              # Append the parameter filename to the base directory path
+              CONFIG_FILE="${BASE_DIR}\\${{ parameters.configFileName }}"
+              
+              # Check if the config file exists
+              if [ ! -f "$CONFIG_FILE" ]; then
+                echo "Error: Config file $CONFIG_FILE not found."
+                exit 1
+              fi
+
+              # Extract key and value from the propertyOverride parameter
+              OVERRIDE_KEY="${{ parameters.propertyOverride%%=* }}"
+              OVERRIDE_VALUE="${{ parameters.propertyOverride#*= }}"
+              
+              # Use PowerShell to update the property in the file
+              powershell -Command "
+                (Get-Content -Path $CONFIG_FILE) -replace '^$OVERRIDE_KEY=.*', '$OVERRIDE_KEY=$OVERRIDE_VALUE' | Set-Content -Path $CONFIG_FILE
+              "
+
+              echo "Property '$OVERRIDE_KEY' overridden with value '$OVERRIDE_VALUE' in $CONFIG_FILE"
+            displayName: 'Override Property in Configuration File'
+
+          # Example usage of updated properties
+          - script: |
+              # Load updated properties as environment variables for further use
+              for line in $(cat "$CONFIG_FILE"); do
+                if [[ "$line" == *"="* && "$line" != "#"* ]]; then
+                  key=${line%%=*}
+                  value=${line#*=}
+                  export "$key"="$value"
+                  echo "##vso[task.setvariable variable=$key]$value"
+                fi
+              done
+              echo "Updated configuration loaded."
+            displayName: 'Load Updated Configuration Properties'
