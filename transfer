@@ -4,16 +4,10 @@ trigger:
 
 parameters:
   - name: configFileName
-    displayName: 'Configuration File Name'
-    type: string
-    default: 'config.properties'
-    help: 'Specify the filename of the configuration file in the test directory.'
-
-  - name: propertyOverride
-    displayName: 'Property Override'
+    displayName: 'Override Configuration File Name'
     type: string
     default: ''
-    help: 'Specify the property and new value to override in the format key=value. Leave empty to use the original value in the config file.'
+    help: 'Specify the filename for an override configuration file in the test directory. Leave empty to use only config.properties.'
 
 stages:
   - stage: Build
@@ -28,41 +22,52 @@ stages:
               # Define the base directory
               BASE_DIR="C:\\Users\\UserName\\Desktop\\test"
               
-              # Append the parameter filename to the base directory path
-              CONFIG_FILE="${BASE_DIR}\\${{ parameters.configFileName }}"
+              # Default configuration file
+              CONFIG_FILE="${BASE_DIR}\\config.properties"
               
-              # Check if the config file exists
-              if [ ! -f "$CONFIG_FILE" ]; then
-                echo "Error: Config file $CONFIG_FILE not found."
-                exit 1
-              fi
-
-              # Only proceed with override if propertyOverride is not empty
-              if [ -n "${{ parameters.propertyOverride }}" ]; then
-                # Extract key and value from the propertyOverride parameter
-                OVERRIDE_KEY="${{ parameters.propertyOverride%%=* }}"
-                OVERRIDE_VALUE="${{ parameters.propertyOverride#*= }}"
+              # Optional override file if configFileName is provided
+              if [ -n "${{ parameters.configFileName }}" ]; then
+                OVERRIDE_FILE="${BASE_DIR}\\${{ parameters.configFileName }}"
                 
-                # Use PowerShell to update the property in the file
-                powershell -Command "
-                  (Get-Content -Path $CONFIG_FILE) -replace '^$OVERRIDE_KEY=.*', '$OVERRIDE_KEY=$OVERRIDE_VALUE' | Set-Content -Path $CONFIG_FILE
-                "
-                echo "Property '$OVERRIDE_KEY' overridden with value '$OVERRIDE_VALUE' in $CONFIG_FILE"
-              else
-                echo "No property override provided. Using values from $CONFIG_FILE."
-              fi
-            displayName: 'Override Property in Configuration File (if override is provided)'
-
-          # Load the properties from the (potentially modified) config file for further use
-          - script: |
-              # Load properties as environment variables
-              for line in $(cat "$CONFIG_FILE"); do
-                if [[ "$line" == *"="* && "$line" != "#"* ]]; then
-                  key=${line%%=*}
-                  value=${line#*=}
-                  export "$key"="$value"
-                  echo "##vso[task.setvariable variable=$key]$value"
+                # Check if the override file exists
+                if [ ! -f "$OVERRIDE_FILE" ]; then
+                  echo "Error: Override file $OVERRIDE_FILE not found."
+                  exit 1
                 fi
+              fi
+
+              # Load properties from the config file and override if necessary
+              declare -A properties
+              
+              # Function to load properties from a file into the 'properties' array
+              load_properties() {
+                local file=$1
+                while IFS='=' read -r key value; do
+                  if [[ ! "$key" =~ ^# && "$key" != "" ]]; then
+                    properties[$key]=$value
+                  fi
+                done < "$file"
+              }
+
+              # Load properties from config.properties
+              load_properties "$CONFIG_FILE"
+
+              # If override file is specified, load its properties to override defaults
+              if [ -n "$OVERRIDE_FILE" ]; then
+                load_properties "$OVERRIDE_FILE"
+                echo "Properties overridden with values from $OVERRIDE_FILE"
+              else
+                echo "No override file provided. Using values from $CONFIG_FILE."
+              fi
+
+              # Export each property as an Azure DevOps pipeline variable
+              for key in "${!properties[@]}"; do
+                echo "##vso[task.setvariable variable=$key]${properties[$key]}"
               done
-              echo "Configuration loaded from $CONFIG_FILE."
-            displayName: 'Load Configuration Properties'
+
+              echo "Configuration loaded successfully."
+            displayName: 'Load and Override Configuration Properties'
+          
+          # Example usage of loaded properties
+          - script: |
+              echo "Property1: $
