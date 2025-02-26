@@ -1,5 +1,42 @@
-variables:
-  - group: MyVariableGroup  # Reference the variable group containing Network_Path and configFileName
+import org.json.JSONObject;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-  # Define an additional variable directly in the pipeline YAML
-  AnotherPath: '\\Subfolder'
+public class JsonFileUpdater {
+    public static void main(String[] args) {
+        String filePath = "test.json";
+        String updatedContent = updateJsonFile(filePath, "image.jpg");
+        
+        if (updatedContent != null) {
+            writeFile(filePath, updatedContent);
+            System.out.println("File updated successfully.");
+        } else {
+            System.out.println("Failed to update file.");
+        }
+    }
+
+    private static String updateJsonFile(String filePath, String newFileName) {
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            JSONObject json = new JSONObject(content);
+            
+            // Replace {fileName} with "image.jpg"
+            String path = json.getString("path").replace("{fileName}", newFileName);
+            json.put("path", path);
+            
+            return json.toString(4); // Pretty print with indentation
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static void writeFile(String filePath, String content) {
+        try (FileWriter file = new FileWriter(filePath)) {
+            file.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
