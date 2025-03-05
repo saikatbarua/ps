@@ -1,42 +1,28 @@
-import org.json.JSONObject;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+public static String nextBusinessDay(String dateFormat, int minDaysAfter) {
+        LocalDate date = LocalDate.now().plusDays(minDaysAfter); // Start counting from today + minDaysAfter
+        Set<LocalDate> holidays = getHolidays(); // Get predefined holiday list
 
-public class JsonFileUpdater {
-    public static void main(String[] args) {
-        String filePath = "test.json";
-        String updatedContent = updateJsonFile(filePath, "image.jpg");
-        
-        if (updatedContent != null) {
-            writeFile(filePath, updatedContent);
-            System.out.println("File updated successfully.");
-        } else {
-            System.out.println("Failed to update file.");
+        // Keep moving forward until we find a valid business day
+        while (isWeekend(date) || holidays.contains(date)) {
+            date = date.plusDays(1);
         }
+
+        // Format the date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
+        return date.format(formatter);
     }
 
-    private static String updateJsonFile(String filePath, String newFileName) {
-        try {
-            String content = new String(Files.readAllBytes(Paths.get(filePath)));
-            JSONObject json = new JSONObject(content);
-            
-            // Replace {fileName} with "image.jpg"
-            String path = json.getString("path").replace("{fileName}", newFileName);
-            json.put("path", path);
-            
-            return json.toString(4); // Pretty print with indentation
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public static boolean isWeekend(LocalDate date) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
     }
 
-    private static void writeFile(String filePath, String content) {
-        try (FileWriter file = new FileWriter(filePath)) {
-            file.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public static Set<LocalDate> getHolidays() {
+        Set<LocalDate> holidays = new HashSet<>();
+        holidays.add(LocalDate.of(2025, 1, 1));  // New Year's Day
+        holidays.add(LocalDate.of(2025, 7, 4));  // Independence Day
+        holidays.add(LocalDate.of(2025, 12, 25)); // Christmas
+        // Add more holidays as needed
+        return holidays;
     }
 }
