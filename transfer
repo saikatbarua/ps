@@ -1,14 +1,12 @@
-public static String formatDate(String inputDate) {
-        try {
-            // Define input and output date formats
-            SimpleDateFormat inputFormat = new SimpleDateFormat("M/d/yyyy");
-            SimpleDateFormat outputFormat = new SimpleDateFormat("MM/dd/yyyy");
-
-            // Parse input date and format to desired format
-            Date date = inputFormat.parse(inputDate);
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return "Invalid Date";
+public static String getLastFourChars(String input) {
+        if (input == null || input.length() < 4) {
+            return input; // Return original string if it's null or shorter than 4 characters
         }
+        return input.substring(input.length() - 4); // Extract last 4 characters
+    }
+
+    public static void main(String[] args) {
+        System.out.println(getLastFourChars("HelloWorld")); // Output: orld
+        System.out.println(getLastFourChars("12345678"));   // Output: 5678
+        System.out.println(getLastFourChars("ABC"));        // Output: ABC (handles short strings)
     }
