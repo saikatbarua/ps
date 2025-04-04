@@ -1,15 +1,13 @@
-public class CheckFriday11AM {
-    public static boolean isAfterOrEqualFriday11AM(LocalDate date) {
-        // Define the Eastern Time Zone
-        ZoneId easternZone = ZoneId.of("America/New_York");
-
-        // Get the current date and time in Eastern Time
-        ZonedDateTime nowEastern = ZonedDateTime.now(easternZone);
-
-        // Create 11 AM Eastern Time for the given date
-        ZonedDateTime elevenAMEastern = ZonedDateTime.of(date, LocalTime.of(11, 0), easternZone);
-
-        // Check if the given date is after or equal to Friday at 11 AM ET
-        return (elevenAMEastern.getDayOfWeek() == DayOfWeek.FRIDAY && nowEastern.isAfter(elevenAMEastern)) 
-                || elevenAMEastern.getDayOfWeek().getValue() > DayOfWeek.FRIDAY.getValue();
-    }
+try {
+            return new FluentWait<>(driver)
+                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))  // Max wait = 3 seconds
+                    .pollingEvery(Duration.ofMillis(100))  // Check every 100ms
+                    .ignoring(NoSuchElementException.class)  // Ignore missing element
+                    .ignoring(org.openqa.selenium.StaleElementReferenceException.class) // Handle stale elements
+                    .until(d -> {
+                        WebElement element = d.findElement(locator);
+                        return element.isDisplayed();
+                    });
+        } catch (Exception e) {
+            return false; // Return false if not found in 3 seconds
+        }
