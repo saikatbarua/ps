@@ -1,13 +1,79 @@
-try {
-            return new FluentWait<>(driver)
-                    .withTimeout(Duration.ofSeconds(timeoutInSeconds))  // Max wait = 3 seconds
-                    .pollingEvery(Duration.ofMillis(100))  // Check every 100ms
-                    .ignoring(NoSuchElementException.class)  // Ignore missing element
-                    .ignoring(org.openqa.selenium.StaleElementReferenceException.class) // Handle stale elements
-                    .until(d -> {
-                        WebElement element = d.findElement(locator);
-                        return element.isDisplayed();
-                    });
-        } catch (Exception e) {
-            return false; // Return false if not found in 3 seconds
+  Scenario: Write results with status to excel
+    Given the following test results and writes to excel file name "file_name.xlsx" and sheet name "results":
+      | testcaseid | apiKey    | apiVlue | uiValue |
+      | 123        | firstName | John    | John    |
+      |            | lastName  | Doe     | Do      |
+
+
+
+
+
+@Given("the following test results and writes to excel file name {string} and sheet name {string}:")
+public void write_test_results_with_comparison(String fileName, String sheetName, DataTable dataTable) throws IOException {
+    List<Map<String, String>> originalRows = dataTable.asMaps(String.class, String.class);
+    List<String> headers = new ArrayList<>(dataTable.topCells());
+
+    // Add status column dynamically
+    if (!headers.contains("status")) {
+        headers.add("status");
+    }
+
+    // Add pass/fail based on apiVlue == uiValue
+    List<Map<String, String>> updatedRows = new ArrayList<>();
+    for (Map<String, String> row : originalRows) {
+        Map<String, String> newRow = new LinkedHashMap<>(row); // maintain order
+        String apiVal = row.getOrDefault("apiVlue", "").trim();
+        String uiVal = row.getOrDefault("uiValue", "").trim();
+        String status = apiVal.equals(uiVal) ? "pass" : "fail";
+        newRow.put("status", status);
+        updatedRows.add(newRow);
+    }
+
+    ReportWriter.writeDynamicToExcel(headers, updatedRows, fileName, sheetName);
+}
+
+
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+public class ReportWriter {
+
+    public static void writeDynamicToExcel(List<String> headers, List<Map<String, String>> rows, String fileName, String sheetName) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet(sheetName);
+
+        // Write header
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.size(); i++) {
+            headerRow.createCell(i).setCellValue(headers.get(i));
         }
+
+        // Write data rows
+        int rowNum = 1;
+        for (Map<String, String> row : rows) {
+            Row excelRow = sheet.createRow(rowNum++);
+            for (int i = 0; i < headers.size(); i++) {
+                String cellValue = row.getOrDefault(headers.get(i), "");
+                excelRow.createCell(i).setCellValue(cellValue);
+            }
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < headers.size(); i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        // Save to file
+        try (FileOutputStream out = new FileOutputStream(fileName)) {
+            workbook.write(out);
+        }
+
+        workbook.close();
+    }
+}
