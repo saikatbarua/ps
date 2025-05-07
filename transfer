@@ -77,3 +77,22 @@ public class ReportWriter {
         workbook.close();
     }
 }
+
+
+List<Map<String, String>> updatedRows = new ArrayList<>();
+        for (Map<String, String> row : rows) {
+            Map<String, String> newRow = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : row.entrySet()) {
+                String value = entry.getValue();
+                if (value != null && value.matches("\\{.+}")) {
+                    String key = value.replaceAll("[{}]", "");
+                    value = row.getOrDefault(key, "");
+                }
+                newRow.put(entry.getKey(), value);
+            }
+            String apiVal = newRow.getOrDefault("apiVlue", "").trim();
+            String uiVal = newRow.getOrDefault("uiValue", "").trim();
+            String status = apiVal.equals(uiVal) ? "pass" : "fail";
+            newRow.put("status", status);
+            updatedRows.add(newRow);
+        }
